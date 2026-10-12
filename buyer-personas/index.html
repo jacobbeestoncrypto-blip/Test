@@ -1,0 +1,689 @@
+<title>Listing Persona Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: two-pane workbench. Intake sheet on the left (sticky on desktop), persona deck on the right; stacks on phones. */
+:root {
+  --bg: #eef1ef;
+  --surface: #ffffff;
+  --sunk: #e3e8e5;
+  --ink: #18241f;
+  --muted: #5b6b64;
+  --line: #cfd8d3;
+  --accent: #1f5f4f;        /* deep sign-post green */
+  --accent-ink: #ffffff;
+  --accent-soft: #d6e8e1;
+  --mark: #c98a12;          /* brass, for fit scores */
+  --mark-soft: #f6e7c6;
+  --strong: #1f6f4a;
+  --good: #8a6a10;
+  --maybe: #6d6f78;
+  --danger: #a33a2c;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111816; --surface: #18211e; --sunk: #0d1311; --ink: #e5ece8; --muted: #93a49c; --line: #2b3833;
+    --accent: #5fb89c; --accent-ink: #0b1411; --accent-soft: #1d3a31; --mark: #e2a93b; --mark-soft: #3a2e14;
+    --strong: #6fcf9a; --good: #e2b54f; --maybe: #9ea1ab; --danger: #ef8a7a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111816; --surface: #18211e; --sunk: #0d1311; --ink: #e5ece8; --muted: #93a49c; --line: #2b3833;
+  --accent: #5fb89c; --accent-ink: #0b1411; --accent-soft: #1d3a31; --mark: #e2a93b; --mark-soft: #3a2e14;
+  --strong: #6fcf9a; --good: #e2b54f; --maybe: #9ea1ab; --danger: #ef8a7a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font-body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Header */
+.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; padding-bottom: 18px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+.top h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 700; letter-spacing: -0.01em; }
+.top p { margin: 4px 0 0; color: var(--muted); max-width: 60ch; }
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Intake sheet */
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 16px; }
+@media (min-width: 901px) { .sheet { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow: auto; } }
+.sheet h2 { font-size: 1.05rem; }
+.eyebrow { font: 600 0.72rem/1 var(--font-data); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.fields { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.f { display: grid; gap: 4px; grid-column: span 6; min-width: 0; }
+.f.s3 { grid-column: span 3; } .f.s2 { grid-column: span 2; }
+.f label { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+.f input, .f select, .f textarea { width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; min-width: 0; }
+.f input[type="number"] { font-family: var(--font-data); font-size: 0.92rem; }
+.f textarea { resize: vertical; min-height: 70px; }
+.chip-group { display: grid; gap: 6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 4px 11px; font-size: 0.85rem; cursor: pointer; user-select: none; transition: background .12s, border-color .12s; }
+.chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 600; font-size: 0.92rem; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn.small { padding: 4px 10px; font-size: 0.82rem; }
+.gen-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.engine-note { font-size: 0.82rem; color: var(--muted); }
+
+/* Results */
+.results { display: grid; gap: 18px; min-width: 0; }
+.spec { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; display: grid; gap: 10px; }
+.spec-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: baseline; }
+.spec h2 { font-size: 1.4rem; }
+.specline { font-family: var(--font-data); font-size: 0.88rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tag { display: inline-block; font: 600 0.7rem/1 var(--font-data); text-transform: uppercase; letter-spacing: 0.07em; padding: 5px 8px; border-radius: 5px; background: var(--mark-soft); color: var(--good); }
+.tag.ai { background: var(--accent-soft); color: var(--accent); }
+.summary { margin: 0; max-width: 75ch; }
+.lead { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lead b { font-size: 0.82rem; color: var(--muted); margin-right: 4px; }
+.lead span { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 3px 10px; font-size: 0.85rem; font-weight: 600; }
+
+.rank { display: grid; gap: 6px; }
+.rank-row { display: grid; grid-template-columns: minmax(0, 13rem) minmax(0, 1fr) 3.2rem; gap: 10px; align-items: center; font-size: 0.9rem; }
+.rank-row button { all: unset; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.rank-row button:hover { color: var(--accent); text-decoration: underline; }
+.rank-row button:focus-visible { outline: 2px solid var(--accent); }
+.bar { height: 8px; background: var(--sunk); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--mark); border-radius: 4px; }
+.rank-row .num { font-family: var(--font-data); text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .rank-row { grid-template-columns: minmax(0, 1fr) 3rem; } .rank-row .bar { grid-column: 1 / -1; order: 3; } }
+
+.deck { display: grid; gap: 16px; }
+.persona { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.p-head { display: flex; flex-wrap: wrap; gap: 10px 16px; justify-content: space-between; align-items: start; padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+.p-title { display: grid; gap: 3px; min-width: 0; }
+.p-title h3 { font-size: 1.25rem; }
+.p-title .nick { color: var(--muted); font-size: 0.92rem; }
+.p-side { display: flex; align-items: center; gap: 10px; }
+.fit { display: grid; justify-items: end; gap: 2px; }
+.fit strong { font: 600 1.5rem/1 var(--font-data); color: var(--mark); font-variant-numeric: tabular-nums; }
+.pill { font: 600 0.68rem/1 var(--font-data); text-transform: uppercase; letter-spacing: 0.07em; padding: 4px 7px; border-radius: 4px; border: 1px solid currentColor; }
+.pill.strong { color: var(--strong); } .pill.good { color: var(--good); } .pill.maybe { color: var(--maybe); }
+.p-snap { padding: 12px 18px 0; margin: 0; max-width: 80ch; }
+.p-facts { display: flex; flex-wrap: wrap; gap: 6px 20px; padding: 8px 18px 0; font-size: 0.9rem; }
+.p-facts div { min-width: 0; } .p-facts b { color: var(--muted); font-weight: 600; }
+.p-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; padding: 14px 18px 16px; }
+@media (max-width: 640px) { .p-body { grid-template-columns: minmax(0, 1fr); } }
+.p-sec { min-width: 0; display: grid; gap: 6px; align-content: start; }
+.p-sec h4 { margin: 0; font: 600 0.72rem/1.2 var(--font-data); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.p-sec ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.hook b { color: var(--accent); }
+.obj { display: grid; gap: 2px; }
+.obj span { color: var(--muted); font-size: 0.92rem; }
+.copy-block { grid-column: 1 / -1; background: var(--bg); border: 1px dashed var(--line); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; }
+.copy-block .hl { font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
+.copy-block p { margin: 0; }
+.channels { display: flex; flex-wrap: wrap; gap: 6px; }
+.channels span { border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; font-size: 0.85rem; }
+
+.others { color: var(--muted); font-size: 0.9rem; }
+.notice { font-size: 0.85rem; color: var(--muted); border-left: 3px solid var(--mark); padding: 4px 0 4px 10px; max-width: 80ch; }
+.status { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.status .msg { flex: 1 1 240px; min-width: 0; }
+.status.err { border-color: var(--danger); }
+.status.err .msg { color: var(--danger); }
+.dots::after { content: "…"; animation: blink 1.2s steps(3) infinite; }
+@keyframes blink { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .dots::after { animation: none; } .chip { transition: none; } }
+
+/* Saved listings drawer */
+.saved { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; display: grid; gap: 10px; }
+.saved ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.saved li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.saved li:first-child { border-top: 0; }
+.saved .meta { font-family: var(--font-data); font-size: 0.78rem; color: var(--muted); }
+.saved .name { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 0.9rem; z-index: 10; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Listing Persona Builder</h1>
+      <p>Enter a listing's features and get the buyer personas most likely to bite, with the hooks, objections, channels and ad copy for each.</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="btnSaved" type="button" aria-expanded="false" aria-controls="savedPanel">Saved listings (<span id="savedCount">0</span>)</button>
+      <button class="btn" id="btnNew" type="button">New listing</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <form class="sheet" id="form" autocomplete="off">
+      <div class="eyebrow">Listing intake</div>
+      <div class="fields">
+        <div class="f"><label for="address">Address or listing name</label><input id="address" placeholder="e.g. 42 Larkspur Lane"></div>
+        <div class="f s3"><label for="ptype">Property type</label>
+          <select id="ptype">
+            <option value="single">Single-family home</option>
+            <option value="condo">Condo / apartment</option>
+            <option value="town">Townhouse</option>
+            <option value="multi">Multi-family / duplex</option>
+            <option value="rural">Rural / acreage</option>
+            <option value="land">Vacant land</option>
+          </select></div>
+        <div class="f s3"><label for="condition">Condition</label>
+          <select id="condition">
+            <option value="ready">Move-in ready</option>
+            <option value="new">New build</option>
+            <option value="dated">Liveable but dated</option>
+            <option value="work">Needs work</option>
+          </select></div>
+        <div class="f s3"><label for="price">List price</label><input id="price" placeholder="e.g. $689,000"></div>
+        <div class="f s3"><label for="tier">Price for the area</label>
+          <select id="tier">
+            <option value="entry">Entry level</option>
+            <option value="mid">Mid-market</option>
+            <option value="upper">Upper-mid</option>
+            <option value="lux">Luxury</option>
+          </select></div>
+        <div class="f s2"><label for="beds">Beds</label><input id="beds" type="number" min="0" step="1" inputmode="numeric"></div>
+        <div class="f s2"><label for="baths">Baths</label><input id="baths" type="number" min="0" step="0.5" inputmode="decimal"></div>
+        <div class="f s2"><label for="sqft">Sq ft</label><input id="sqft" type="number" min="0" step="10" inputmode="numeric"></div>
+        <div class="f s3"><label for="lot">Lot size</label><input id="lot" placeholder="e.g. 0.3 acre"></div>
+        <div class="f s3"><label for="year">Year built</label><input id="year" type="number" min="1600" max="2100" inputmode="numeric"></div>
+        <div class="f"><label for="location">Location and neighbourhood</label><input id="location" placeholder="Suburb, city, what the area is known for"></div>
+      </div>
+
+      <div class="chip-group" id="chipGroups"></div>
+
+      <div class="f"><label for="notes">Other features and notes</label><textarea id="notes" placeholder="Anything else: renovations, views, zoning, seller story, HOA fees, days on market…"></textarea></div>
+
+      <div class="gen-row">
+        <button class="btn primary" id="btnGen" type="submit">Build personas</button>
+        <button class="btn" id="btnStop" type="button" hidden>Stop</button>
+        <span class="engine-note" id="engineNote">Checking for Claude…</span>
+      </div>
+    </form>
+
+    <section class="results" id="results" aria-live="polite">
+      <div class="saved" id="savedPanel" hidden>
+        <div class="spec-head"><h2 style="font-size:1.05rem">Saved listings</h2><span class="engine-note">Kept in this browser only</span></div>
+        <ul id="savedList"></ul>
+      </div>
+      <div id="out"></div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ---------- Feature catalogue ---------- */
+const GROUPS = [
+  ["Inside", ["Open floor plan","Updated kitchen","Primary suite on main","Home office","Finished basement","Bonus / media room","Fireplace","High ceilings","Walk-in closets","Smart home tech"]],
+  ["Outside", ["Large yard","Fenced yard","Pool","Deck / patio","Garden","2+ car garage","Workshop","RV / boat parking","Acreage","Waterfront","Views"]],
+  ["Location", ["Top-rated schools","Walkable to shops","Near transit","Near parks / trails","Quiet cul-de-sac","Close to downtown","Near hospitals","Golf / club community"]],
+  ["Extras", ["Single-level living","In-law / guest suite","ADU / granny flat","Rental income potential","Low maintenance","Lock-and-leave","HOA amenities","Accessibility features","Gated / secure","Solar / energy efficient","Historic character","Development potential","Sold furnished"]],
+];
+
+/* ---------- Persona archetypes (offline engine) ---------- */
+const has = f => L => L.features.has(f);
+const any = (...fs) => L => fs.some(f => L.features.has(f));
+const kw = re => L => re.test(L.notes + " " + L.location);
+const T = (...ts) => L => ts.includes(L.ptype);
+const P = (...ps) => L => ps.includes(L.tier);
+const C = (...cs) => L => cs.includes(L.condition);
+const bedsGE = n => L => L.beds >= n;
+const bedsLE = n => L => L.beds > 0 && L.beds <= n;
+const sqftGE = n => L => L.sqft >= n;
+
+const BUDGET = {
+  entry: "Stretching to buy; payment-sensitive and often using low-deposit finance",
+  mid: "Comfortable but value-focused; comparing several homes in the bracket",
+  upper: "Well-qualified with equity from a previous home",
+  lux: "Cash-rich or high-income; buying on lifestyle rather than payment",
+};
+
+const ARCH = [
+  { id: "ftb", name: "First-home buyer", household: "Single or couple, late 20s to mid 30s, currently renting",
+    signals: [[P("entry"),30,"Priced where first-home buyers are shopping"],[P("mid"),8,null],[P("lux"),-40,null],[P("upper"),-15,null],
+      [T("condo","town"),14,"An attached home keeps the entry price and upkeep down"],[bedsLE(3),8,"Bedroom count suits a first home"],
+      [C("ready","new"),10,"Move-in ready, so savings don't go on repairs"],[has("Low maintenance"),8,"Low maintenance suits busy first-time owners"],
+      [any("Near transit","Walkable to shops"),8,"Walkable or transit-friendly, close to work and social life"],[has("Updated kitchen"),5,"Updated kitchen photographs well and feels like an upgrade from renting"],
+      [C("work"),-10,null],[T("rural","land"),-20,null]],
+    motivations: ["Stop paying rent and start building equity","A place that feels like theirs","Keep the monthly payment manageable"],
+    objections: [["Can we afford the monthly payment?","Prepare a payment breakdown at a few deposit levels and connect them with a lender before showings."],["Worried about surprise repair costs","Lead with recent updates, the age of the roof and systems, and offer the building inspection report."]],
+    channels: ["Instagram and TikTok reels","Major listing portals with saved-search alerts","First-home buyer seminars and lender partners"],
+    tips: ["Have a monthly payment estimate printed at the open home","Point out storage and the cost of running the home"] },
+
+  { id: "fam", name: "Growing family", household: "Couple in their 30s to 40s with young children or one on the way",
+    signals: [[bedsGE(3),14,"Bedroom count gives each child a room"],[bedsGE(4),8,null],[has("Top-rated schools"),20,"Within reach of well-regarded schools"],
+      [any("Large yard","Fenced yard"),12,"Usable outdoor space for kids and pets"],[has("Quiet cul-de-sac"),8,"Quiet street with low through-traffic"],
+      [any("Bonus / media room","Finished basement"),8,"A second living area for playroom or teen space"],[has("Near parks / trails"),5,"Parks nearby for weekends"],
+      [T("single"),10,null],[T("condo"),-12,null],[P("mid","upper"),6,null],[kw(/school|kid|child|family|playground/i),6,"Area is known as family-friendly"],[bedsLE(2),-15,null]],
+    motivations: ["Space as the family grows","A good school catchment","A safe street and a yard"],
+    objections: [["Is the school zoning guaranteed?","Confirm catchment boundaries in writing and include the school's enrolment link in the flyer."],["Will we outgrow it?","Show the flex spaces and any room to extend."]],
+    channels: ["Facebook targeting local parents' groups","Listing portals filtered by school zone","Weekend open homes timed around kids' sport"],
+    tips: ["Stage one bedroom as a child's room","Walk the yard and point out sight lines from the kitchen"] },
+
+  { id: "moveup", name: "Move-up family", household: "Established family in their 40s with older kids, selling a smaller home",
+    signals: [[bedsGE(4),14,"Four-plus bedrooms for older kids and guests"],[sqftGE(2500),12,"Generous floor area"],[P("upper"),15,"Priced for buyers trading up with equity"],[P("lux"),6,null],[P("mid"),4,null],
+      [has("Primary suite on main"),6,"A primary suite that gives parents their own retreat"],[has("Home office"),6,"A dedicated office for working from home"],[has("2+ car garage"),8,"Garaging for two cars plus gear"],
+      [has("Updated kitchen"),8,"Entertainer's kitchen"],[has("Top-rated schools"),8,"School zone matters for teenagers"],[any("Pool","Deck / patio"),6,"Outdoor entertaining space"],[P("entry"),-20,null],[bedsLE(2),-20,null]],
+    motivations: ["More room and separation for teenagers","A home to entertain in","Trade up while the equity is there"],
+    objections: [["We need to sell our current home first","Talk through bridging finance or a sale-subject offer, and offer an appraisal of their current home."],["Is it worth the step up in price?","Show recent comparable sales and what the extra space costs per sq ft."]],
+    channels: ["Your own past-client database (move-up time)","Listing portals and local magazines","Targeted Facebook and Instagram ads in nearby suburbs"],
+    tips: ["Show how the house zones parents and kids apart","Have a market appraisal offer ready for their current home"] },
+
+  { id: "down", name: "Downsizing empty-nesters", household: "Couple in their late 50s to 60s, kids have left home",
+    signals: [[has("Single-level living"),20,"Single-level living with no stairs"],[has("Primary suite on main"),15,"Primary suite on the main floor"],[has("Low maintenance"),12,"Low maintenance frees up weekends"],
+      [has("Lock-and-leave"),10,"Lock-and-leave for travel"],[bedsLE(3),10,"Right-sized without being cramped"],[T("condo","town"),10,"No large garden to manage"],
+      [any("Walkable to shops","Close to downtown"),6,"Cafés and shops within a walk"],[has("Near hospitals"),5,"Medical services nearby"],[has("HOA amenities"),5,"Shared amenities without the upkeep"],
+      [has("Accessibility features"),6,"Accessible design for the long term"],[C("work"),-12,null],[bedsGE(5),-15,null],[has("Top-rated schools"),-2,null],[has("Acreage"),-10,null]],
+    motivations: ["Less house and less maintenance","Free up equity for travel and retirement","A home that works as they age"],
+    objections: [["Will it fit our furniture and storage?","Provide a floor plan with dimensions and point out storage and the garage."],["Is the HOA or body corporate well run?","Have the fees, reserve fund and recent minutes ready."]],
+    channels: ["Local newspaper and print magazines","Facebook (45+ audience)","Referrals from financial planners and estate lawyers"],
+    tips: ["Talk through the floor plan slowly","Point out the low-maintenance finishes and garden"] },
+
+  { id: "retire", name: "Active retirees", household: "Retired couple in their mid 60s to 70s",
+    signals: [[has("Golf / club community"),15,"Golf and club lifestyle on the doorstep"],[has("Single-level living"),12,"Everything on one level"],[has("Near hospitals"),10,"Close to medical care"],
+      [has("Accessibility features"),10,"Built-in accessibility"],[any("Views","Waterfront"),8,"Views to enjoy every day"],[has("Low maintenance"),8,"Little upkeep"],[has("Garden"),5,"A manageable garden to potter in"],
+      [has("Gated / secure"),6,"Secure for when they travel"],[bedsLE(3),5,null],[kw(/retire|55\+|over 55|senior|golf/i),10,"Area draws retirees"],[C("work"),-15,null],[bedsGE(5),-10,null]],
+    motivations: ["Lifestyle and community","Health and convenience","Safety and peace of mind"],
+    objections: [["Stairs and access as we age","Highlight step-free entry and the main-floor bedroom."],["Running costs on a fixed income","Have rates, HOA fees and energy costs written down."]],
+    channels: ["Print and local magazines","Community and club newsletters","Facebook (55+ audience)"],
+    tips: ["Mention nearby medical, pharmacy and shops","Allow time; these buyers often return for a second look with family"] },
+
+  { id: "remote", name: "Remote professional", household: "Professional or couple in their 30s to 40s who work from home",
+    signals: [[has("Home office"),25,"A dedicated home office"],[has("Bonus / media room"),6,"A spare room that can be a second office"],[has("Smart home tech"),8,"Smart-home and connectivity features"],
+      [any("Quiet cul-de-sac","Near parks / trails"),6,"Quiet setting for calls and lunchtime walks"],[bedsGE(3),6,"A spare bedroom for an office or guests"],[has("Views"),4,"A view from the desk"],
+      [has("Solar / energy efficient"),5,"Lower running costs for a home in all-day use"],[kw(/fibre|fiber|internet|nbn|gigabit|broadband/i),10,"Fast internet"]],
+    motivations: ["A proper office, not the dining table","Better lifestyle for the same budget","Fast reliable internet"],
+    objections: [["What's the internet like?","Confirm the broadband type and speed and put it in the listing."],["Is it too far from the office for the odd commute?","Give drive and transit times to the main business district."]],
+    channels: ["LinkedIn and Instagram","Listing portals using a 'home office' keyword","Relocation and tech-industry networks"],
+    tips: ["Stage the office with a desk and good lighting","Have the internet speed test result on hand"] },
+
+  { id: "urban", name: "Urban young professionals", household: "Single or couple in their mid 20s to 30s, no kids, high earners",
+    signals: [[has("Walkable to shops"),16,"Walk to cafés, bars and shops"],[has("Near transit"),14,"Short commute by transit"],[has("Close to downtown"),14,"Close to the city centre"],
+      [T("condo","town"),12,"Easy-care urban living"],[has("Lock-and-leave"),6,"Lock-and-leave for weekends away"],[has("Low maintenance"),6,null],[has("Smart home tech"),5,"Modern smart-home features"],
+      [bedsLE(2),8,null],[has("Open floor plan"),4,"Open plan for entertaining"],[has("Acreage"),-15,null],[T("rural","land"),-25,null],[P("lux"),-6,null]],
+    motivations: ["Location over size","A great lifestyle and short commute","Modern, low-effort living"],
+    objections: [["Not much space for the price","Sell the lifestyle: map the walkable spots and commute times."],["Body corporate or HOA costs","Explain what the fees include and show the building's records."]],
+    channels: ["Instagram reels and TikTok","Listing portals with saved searches","Twilight open homes after work"],
+    tips: ["Run the open home after work hours","Put a walk-score map of local spots on the flyer"] },
+
+  { id: "invest", name: "Investor / landlord", household: "Experienced or first-time investor buying for yield and growth",
+    signals: [[T("multi"),30,"Multiple units on one title"],[has("Rental income potential"),22,"Clear rental income potential"],[has("ADU / granny flat"),18,"Second dwelling for dual income"],
+      [has("In-law / guest suite"),6,null],[C("work","dated"),8,"Value-add upside through renovation"],[P("entry","mid"),8,"Purchase price supports a good gross yield"],[any("Near transit","Walkable to shops"),6,"Location tenants want"],
+      [has("Low maintenance"),4,"Low maintenance keeps holding costs down"],[has("Development potential"),12,"Development or subdivision upside"],[P("lux"),-15,null],[kw(/tenant|lease|rent|yield|zoning|subdiv/i),10,"Notes mention rental or zoning upside"]],
+    motivations: ["Cash flow and yield","Long-term capital growth","Value-add or development upside"],
+    objections: [["What will it rent for?","Get a rental appraisal from your property manager and include it in the information pack."],["Hidden maintenance costs","Supply building reports and the age of key systems."]],
+    channels: ["Investor email lists and property manager referrals","Listing portals' investment filters","Buyer's agents"],
+    tips: ["Lead with numbers: rent estimate, yield, outgoings","Mention any zoning or subdivision possibilities"] },
+
+  { id: "reno", name: "Renovator / value-add buyer", household: "Handy owner-occupier or small builder looking for upside",
+    signals: [[C("work"),35,"Priced to reflect the work needed, which leaves upside"],[C("dated"),18,"Dated finishes that can be updated"],[has("Historic character"),8,"Character worth restoring"],
+      [has("Development potential"),10,"Room to extend or develop"],[has("Workshop"),5,"A workshop for projects"],[any("Large yard","Acreage"),5,"Land to work with"],[C("ready","new"),-25,null]],
+    motivations: ["Buy below the area's value and add value","Put their own stamp on the home","A project with good bones"],
+    objections: [["How much will the work cost?","Get rough quotes from a builder and include them with the reports."],["Structural surprises","Provide the building and pest report up front."]],
+    channels: ["Listing portals ('renovate', 'potential', 'bones')","Builder and tradie networks","Auction-ready email lists"],
+    tips: ["Bring a builder to the first open home","Show what's sound: roof, structure, stumps or foundations"] },
+
+  { id: "multigen", name: "Multigenerational household", household: "Extended family: parents, adult children and/or grandparents under one roof",
+    signals: [[has("In-law / guest suite"),25,"A separate guest or in-law suite"],[has("ADU / granny flat"),16,"A self-contained second dwelling"],[bedsGE(5),15,"Five-plus bedrooms"],[bedsGE(4),6,null],
+      [has("Primary suite on main"),8,"Main-floor bedroom for older family members"],[L => L.baths >= 3,6,"Plenty of bathrooms"],[has("Accessibility features"),6,"Accessible for grandparents"],[has("Single-level living"),4,null],
+      [bedsLE(2),-20,null],[T("condo"),-10,null]],
+    motivations: ["Privacy within a shared home","Care for parents or support adult kids","Pool resources for a bigger home"],
+    objections: [["Is there enough privacy?","Show separate entries, living areas and bathrooms."],["Is the second dwelling approved?","Have council or permit approvals ready."]],
+    channels: ["Community-language media and social groups","Listing portals with 'dual living' keyword","Facebook family-audience targeting"],
+    tips: ["Walk the route from the suite to the main house","Point out separate entries and kitchenettes"] },
+
+  { id: "outdoor", name: "Lifestyle and outdoor buyer", household: "Couple or family who prioritise space, nature and hobbies",
+    signals: [[has("Acreage"),20,"Acreage and room to roam"],[T("rural"),15,"A rural lifestyle setting"],[has("Waterfront"),18,"Waterfront access"],[has("RV / boat parking"),15,"Room for the boat, van or trailer"],
+      [has("Near parks / trails"),12,"Trails and parks close by"],[has("Views"),10,"Views"],[has("Workshop"),8,"Workshop or shed for hobbies"],[has("Garden"),6,"Space to grow"],[has("Pool"),4,null],
+      [T("condo"),-15,null],[has("Close to downtown"),-3,null]],
+    motivations: ["Space and fresh air","Room for toys and hobbies","Escape the city"],
+    objections: [["Too far from services","Give drive times to schools, shops and the hospital."],["Upkeep of land","Explain the water, fencing and maintenance set-up."]],
+    channels: ["Instagram and YouTube video tours","Rural and lifestyle property portals","Outdoor, boating and equestrian clubs"],
+    tips: ["Shoot drone footage for the listing","Show storage, water and access arrangements"] },
+
+  { id: "lux", name: "Luxury executive buyer", household: "Senior executive, business owner or professional couple in their 40s to 60s",
+    signals: [[P("lux"),35,"Priced in the prestige bracket"],[P("upper"),10,null],[sqftGE(3500),10,"Grand scale"],[has("Pool"),8,"Resort-style pool"],[has("Gated / secure"),10,"Privacy and security"],
+      [any("Views","Waterfront"),10,"Signature views or water frontage"],[has("Smart home tech"),6,"Integrated smart-home systems"],[has("Updated kitchen"),5,null],[has("High ceilings"),4,"Architectural volume"],
+      [P("entry"),-35,null],[P("mid"),-12,null],[C("work"),-10,null]],
+    motivations: ["Prestige and privacy","Exceptional design and finishes","Entertaining at scale"],
+    objections: [["Price justification","Prepare a prestige comparables pack and a list of finishes and specifications."],["Privacy during the sale","Offer private, appointment-only inspections."]],
+    channels: ["Prestige print magazines and your agency's luxury network","Private off-market buyer list","Targeted LinkedIn ads"],
+    tips: ["Private showings only, with a printed specifications book","Have architect or builder details ready"] },
+
+  { id: "second", name: "Second-home / holiday buyer", household: "Established couple buying a weekender or holiday rental",
+    signals: [[has("Waterfront"),15,"Waterfront getaway"],[has("Views"),10,"Holiday views"],[has("Lock-and-leave"),12,"Lock-and-leave between visits"],[has("Sold furnished"),15,"Sold furnished, ready to use"],
+      [has("HOA amenities"),6,"Resort-style shared amenities"],[has("Golf / club community"),5,null],[has("Pool"),5,null],[has("Rental income potential"),6,"Holiday-rental income when not in use"],
+      [kw(/beach|lake|ski|resort|holiday|vacation|coast|mountain/i),14,"A holiday destination location"],[has("Top-rated schools"),-3,null]],
+    motivations: ["A getaway that's ready to use","Rental income to offset costs","Future retirement base"],
+    objections: [["Will it rent when we're not there?","Supply a holiday-rental income estimate and local short-stay rules."],["Managing it from afar","Recommend local property managers and caretakers."]],
+    channels: ["Metro-market listing portals (buyers live elsewhere)","Instagram lifestyle content","Holiday-rental management partners"],
+    tips: ["Market in the city where buyers live","Offer video walkthroughs for interstate buyers"] },
+
+  { id: "reloc", name: "Relocating professional", household: "Professional or family moving from another city for work",
+    signals: [[C("ready","new"),12,"Turnkey, so no project from afar"],[C("new"),6,"New build with warranties"],[has("Sold furnished"),6,null],[any("Near transit","Close to downtown"),8,"Easy commute to the business district"],
+      [has("Top-rated schools"),6,"Clear school options for a family arriving mid-year"],[has("Updated kitchen"),4,null],[has("Smart home tech"),3,null],[C("work"),-20,null]],
+    motivations: ["A quick, low-risk purchase","Easy commute","Settle in quickly"],
+    objections: [["We can't inspect in person","Offer live video tours and a full digital information pack."],["Unsure about the area","Send a neighbourhood guide with commute times."]],
+    channels: ["Corporate relocation companies and HR teams","Listing portals viewed from other cities","Video tours on YouTube"],
+    tips: ["Record a narrated video tour","Include a neighbourhood guide with commute times"] },
+];
+
+/* ---------- State ---------- */
+const $ = id => document.getElementById(id);
+const selected = new Set();
+let sample = null, ctl = null, last = null;
+const STORE_KEY = "lpb.saved.v1";
+
+const EXAMPLE = {
+  address: "18 Wattle Grove (example)", ptype: "single", condition: "ready", price: "$845,000", tier: "mid",
+  beds: 4, baths: 2.5, sqft: 2350, lot: "0.22 acre", year: 2004, location: "Leafy family suburb, 25 min to the CBD, near the train line",
+  features: ["Open floor plan","Updated kitchen","Home office","Fenced yard","Deck / patio","2+ car garage","Top-rated schools","Near parks / trails","Quiet cul-de-sac"],
+  notes: "Kitchen renovated 2023. Fibre internet. Low-traffic street backing onto reserve.",
+};
+
+/* ---------- Form ---------- */
+function buildChips() {
+  const wrap = $("chipGroups");
+  for (const [label, items] of GROUPS) {
+    const g = document.createElement("div"); g.className = "chip-group";
+    const h = document.createElement("div"); h.className = "eyebrow"; h.textContent = label;
+    const c = document.createElement("div"); c.className = "chips";
+    for (const it of items) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = it; b.dataset.f = it;
+      b.setAttribute("aria-pressed", "false");
+      b.onclick = () => { selected.has(it) ? selected.delete(it) : selected.add(it); b.setAttribute("aria-pressed", String(selected.has(it))); };
+      c.append(b);
+    }
+    g.append(h, c); wrap.append(g);
+  }
+}
+function readForm() {
+  const n = id => { const v = parseFloat($(id).value); return isFinite(v) ? v : 0; };
+  return {
+    address: $("address").value.trim(), ptype: $("ptype").value, condition: $("condition").value,
+    price: $("price").value.trim(), tier: $("tier").value, beds: n("beds"), baths: n("baths"), sqft: n("sqft"),
+    lot: $("lot").value.trim(), year: n("year"), location: $("location").value.trim(),
+    features: [...selected], notes: $("notes").value.trim(),
+  };
+}
+function fillForm(L) {
+  for (const k of ["address","ptype","condition","price","tier","lot","location","notes"]) $(k).value = L[k] ?? "";
+  for (const k of ["beds","baths","sqft","year"]) $(k).value = L[k] ? L[k] : "";
+  selected.clear(); (L.features || []).forEach(f => selected.add(f));
+  document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", String(selected.has(b.dataset.f))));
+}
+
+/* ---------- Labels ---------- */
+const PT = { single: "Single-family", condo: "Condo / apt", town: "Townhouse", multi: "Multi-family", rural: "Rural / acreage", land: "Vacant land" };
+const CN = { ready: "Move-in ready", new: "New build", dated: "Dated", work: "Needs work" };
+const TR = { entry: "Entry level", mid: "Mid-market", upper: "Upper-mid", lux: "Luxury" };
+function specLine(L) {
+  const parts = [];
+  if (L.price) parts.push(L.price);
+  if (L.beds) parts.push(L.beds + " bd");
+  if (L.baths) parts.push(L.baths + " ba");
+  if (L.sqft) parts.push(L.sqft.toLocaleString() + " sq ft");
+  if (L.lot) parts.push(L.lot);
+  if (L.year) parts.push("Built " + L.year);
+  parts.push(PT[L.ptype], CN[L.condition], TR[L.tier]);
+  return parts.join(" · ");
+}
+
+/* ---------- Offline engine ---------- */
+function headlineFor(L, hooks) {
+  const f = L.features;
+  const pick = ["Waterfront","Views","Home office","Single-level living","In-law / guest suite","Acreage","Pool","Top-rated schools","Walkable to shops","Rental income potential","Updated kitchen"].find(x => f.has(x));
+  const beds = L.beds ? L.beds + "-bedroom " : "";
+  const type = { single: "home", condo: "apartment", town: "townhouse", multi: "income property", rural: "acreage", land: "parcel" }[L.ptype];
+  const lead = { "Waterfront": "on the water", "Views": "with views", "Home office": "with a dedicated home office", "Single-level living": "with easy single-level living",
+    "In-law / guest suite": "with a private guest suite", "Acreage": "with room to roam", "Pool": "with a pool", "Top-rated schools": "in a sought-after school zone",
+    "Walkable to shops": "steps from shops and cafés", "Rental income potential": "with income potential", "Updated kitchen": "with a renovated kitchen" }[pick] || "ready for its next chapter";
+  return (beds + type + " " + lead).replace(/^./, c => c.toUpperCase());
+}
+function offline(L0) {
+  const L = { ...L0, features: new Set(L0.features), notes: L0.notes || "", location: L0.location || "" };
+  const scored = ARCH.map(a => {
+    let s = 0; const hooks = [];
+    for (const [test, pts, why] of a.signals) if (test(L)) { s += pts; if (why && pts > 0) hooks.push(why); }
+    return { a, s, hooks };
+  }).sort((x, y) => y.s - x.s);
+  const toFit = s => Math.max(4, Math.min(96, Math.round(s * 1.15)));
+  const personas = scored.map(({ a, s, hooks }) => ({
+    archetype: a.name, nickname: "", fit: toFit(s), household: a.household, budget: BUDGET[L.tier],
+    snapshot: hooks.length ? `Drawn by: ${hooks.slice(0, 2).join("; ").toLowerCase()}.` : "Weak match on the features entered.",
+    motivations: a.motivations, hooks: hooks.slice(0, 5).map(h => ({ feature: "", why: h })),
+    objections: a.objections.map(([concern, response]) => ({ concern, response })),
+    channels: a.channels, headline: headlineFor(L, hooks), adCopy: "", showingTips: a.tips,
+  }));
+  // Lead features: the selected features that score the most points across the top four archetypes.
+  const topArch = scored.slice(0, 4).map(x => x.a);
+  const lead = [...L.features].map(f => {
+    const only = { ...L, features: new Set([f]), notes: "", location: "", beds: 0, baths: 0, sqft: 0, ptype: "", tier: "", condition: "" };
+    return [f, topArch.reduce((n, a) => n + a.signals.reduce((m, [t, pts]) => m + (pts > 0 && t(only) ? pts : 0), 0), 0)];
+  }).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 5).map(x => x[0]);
+  const top = personas[0], second = personas[1];
+  return {
+    engine: "offline",
+    summary: `Best fit is the ${top.archetype.toLowerCase()} buyer (${top.fit}), followed by the ${second.archetype.toLowerCase()} (${second.fit}). Matched from the features you entered; switch on Claude for named personas and written ad copy.`,
+    leadWith: lead,
+    personas: personas.slice(0, 4),
+    others: personas.slice(4).filter(p => p.fit >= 15).map(p => `${p.archetype} (${p.fit})`),
+  };
+}
+
+/* ---------- Claude engine ---------- */
+function prompt(L) {
+  return `You are a senior residential real estate marketing strategist. From the listing below, identify the 4 most likely buyer personas, ranked by fit.
+
+LISTING (JSON):
+${JSON.stringify({ ...L, propertyType: PT[L.ptype], conditionLabel: CN[L.condition], priceForArea: TR[L.tier] }, null, 1)}
+
+Rules:
+- Base every persona on specific features of THIS listing; cite those features in "hooks".
+- "fit" is 0-100: how likely this persona is to be the buyer, relative to the other buyer types.
+- "nickname" is a short memorable name for the persona, e.g. "Sam & Priya, the work-from-home couple".
+- Fair housing: "headline" and "adCopy" must describe the PROPERTY and lifestyle features only. Never state or imply a preference for or against any protected class (race, colour, religion, sex, disability, familial status, national origin, age, etc.). Personas are an internal planning aid.
+- Be concrete and practical: real channels an agent can use, objections with a specific response, showing tips for the open home.
+- Use the units, currency and spelling implied by the listing.
+
+Reply with ONLY a JSON object of this shape:
+{"summary": "2 sentences on who will buy this and why",
+ "leadWith": ["up to 5 features to lead the marketing with"],
+ "personas": [{"archetype": "short buyer type", "nickname": "", "fit": 0, "snapshot": "1-2 sentence portrait",
+   "household": "", "budget": "financial position in one line", "motivations": ["3 items"],
+   "hooks": [{"feature": "listing feature", "why": "why it matters to them"}],
+   "objections": [{"concern": "", "response": "what the agent says or does"}],
+   "channels": ["3-4 marketing channels"], "headline": "listing headline under 12 words",
+   "adCopy": "2-3 sentence ad aimed at this buyer", "showingTips": ["2-3 items"]}],
+ "others": ["2-3 lower-likelihood buyer types with fit in brackets"]}`;
+}
+const arr = v => Array.isArray(v) ? v : [];
+function clean(r) {
+  const s = x => (x == null ? "" : String(x));
+  return {
+    engine: "claude", summary: s(r.summary), leadWith: arr(r.leadWith).map(s).slice(0, 6), others: arr(r.others).map(s).slice(0, 5),
+    personas: arr(r.personas).slice(0, 6).map(p => ({
+      archetype: s(p.archetype) || "Buyer", nickname: s(p.nickname), fit: Math.max(0, Math.min(100, Math.round(+p.fit || 0))),
+      snapshot: s(p.snapshot), household: s(p.household), budget: s(p.budget), motivations: arr(p.motivations).map(s),
+      hooks: arr(p.hooks).map(h => typeof h === "string" ? { feature: "", why: h } : { feature: s(h.feature), why: s(h.why) }),
+      objections: arr(p.objections).map(o => typeof o === "string" ? { concern: o, response: "" } : { concern: s(o.concern), response: s(o.response) }),
+      channels: arr(p.channels).map(s), headline: s(p.headline), adCopy: s(p.adCopy), showingTips: arr(p.showingTips).map(s),
+    })).sort((a, b) => b.fit - a.fit),
+  };
+}
+const ERR = {
+  not_granted: "Claude wasn't allowed for this page, so these personas come from the built-in matcher.",
+  sampling_disabled: "Claude isn't available on this account, so these personas come from the built-in matcher.",
+  rate_limited: "Claude is busy or you've hit a usage limit. Showing the built-in matcher; try Claude again in a few minutes.",
+  session_expired: "Your Claude session expired. Sign in again to use Claude; showing the built-in matcher meanwhile.",
+  invalid_json: "Claude's answer came back in the wrong format. Showing the built-in matcher; press Build personas to try again.",
+  refused: "Claude declined this request. Check the notes field, then try again.",
+};
+
+/* ---------- Render ---------- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const band = f => f >= 70 ? ["strong", "Strong fit"] : f >= 45 ? ["good", "Good fit"] : ["maybe", "Possible"];
+function render(L, R, { example = false, notice = "" } = {}) {
+  last = { listing: L, result: R };
+  const tag = example ? `<span class="tag">Example listing</span>` : R.engine === "claude" ? `<span class="tag ai">Written by Claude</span>` : `<span class="tag">Built-in matcher</span>`;
+  const rank = R.personas.map((p, i) => `<div class="rank-row"><button type="button" data-jump="p${i}">${esc(p.archetype)}</button><div class="bar"><i style="width:${p.fit}%"></i></div><span class="num">${p.fit}</span></div>`).join("");
+  const cards = R.personas.map((p, i) => {
+    const [cls, lbl] = band(p.fit);
+    const hooks = p.hooks.map(h => `<li class="hook">${h.feature ? `<b>${esc(h.feature)}</b>: ` : ""}${esc(h.why)}</li>`).join("");
+    const objs = p.objections.map(o => `<li class="obj"><div>${esc(o.concern)}</div>${o.response ? `<span>${esc(o.response)}</span>` : ""}</li>`).join("");
+    const list = a => a.map(x => `<li>${esc(x)}</li>`).join("");
+    return `<article class="persona" id="p${i}">
+      <div class="p-head">
+        <div class="p-title"><span class="eyebrow">Persona ${i + 1} of ${R.personas.length}</span><h3>${esc(p.archetype)}</h3>${p.nickname ? `<span class="nick">${esc(p.nickname)}</span>` : ""}</div>
+        <div class="p-side"><button class="btn small" type="button" data-copy="${i}">Copy</button><div class="fit"><strong>${p.fit}</strong><span class="pill ${cls}">${lbl}</span></div></div>
+      </div>
+      ${p.snapshot ? `<p class="p-snap">${esc(p.snapshot)}</p>` : ""}
+      <div class="p-facts">${p.household ? `<div><b>Household</b> ${esc(p.household)}</div>` : ""}${p.budget ? `<div><b>Budget</b> ${esc(p.budget)}</div>` : ""}</div>
+      <div class="p-body">
+        <div class="p-sec"><h4>Features that hook them</h4><ul>${hooks || "<li>No strong feature matches</li>"}</ul></div>
+        <div class="p-sec"><h4>What they want</h4><ul>${list(p.motivations)}</ul></div>
+        <div class="p-sec"><h4>Likely objections and your answer</h4><ul>${objs}</ul></div>
+        <div class="p-sec"><h4>At the showing</h4><ul>${list(p.showingTips)}</ul>
+          <h4 style="margin-top:8px">Where to reach them</h4><div class="channels">${p.channels.map(c => `<span>${esc(c)}</span>`).join("")}</div></div>
+        <div class="copy-block"><span class="eyebrow">Headline for this buyer</span><div class="hl">${esc(p.headline)}</div>${p.adCopy ? `<p>${esc(p.adCopy)}</p>` : ""}</div>
+      </div>
+    </article>`;
+  }).join("");
+  $("out").innerHTML = `
+    <div class="results">
+      ${notice ? `<div class="status err"><div class="msg">${esc(notice)}</div></div>` : ""}
+      <div class="spec">
+        <div class="spec-head"><h2>${esc(L.address || "Untitled listing")}</h2>${tag}</div>
+        <div class="specline">${esc(specLine(L))}</div>
+        ${L.location ? `<div class="specline">${esc(L.location)}</div>` : ""}
+        <p class="summary">${esc(R.summary)}</p>
+        ${R.leadWith.length ? `<div class="lead"><b>Lead the marketing with</b>${R.leadWith.map(x => `<span>${esc(x)}</span>`).join("")}</div>` : ""}
+        <div class="eyebrow" style="margin-top:6px">Buyer fit, 0–100</div>
+        <div class="rank">${rank}</div>
+        <div class="gen-row" style="margin-top:4px"><button class="btn small" type="button" id="btnCopyAll">Copy full brief</button>${example ? "" : `<button class="btn small" type="button" id="btnSave">Save listing</button>`}</div>
+      </div>
+      <div class="deck">${cards}</div>
+      ${R.others && R.others.length ? `<p class="others"><b>Also possible:</b> ${R.others.map(esc).join(", ")}</p>` : ""}
+      <p class="notice">Fair housing: use personas to plan where and how you market. Keep public ads about the property and its features, not about who should live there.</p>
+    </div>`;
+  $("out").querySelectorAll("[data-jump]").forEach(b => b.onclick = () => document.getElementById(b.dataset.jump)?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }));
+  $("out").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => copy(personaText(R.personas[+b.dataset.copy], +b.dataset.copy), "Persona copied"));
+  $("btnCopyAll").onclick = () => copy(briefText(L, R), "Brief copied");
+  const sv = $("btnSave"); if (sv) sv.onclick = () => saveCurrent();
+}
+function renderStatus(msg) {
+  $("out").innerHTML = `<div class="status"><div class="msg dots">${esc(msg)}</div></div>`;
+}
+
+/* ---------- Copy ---------- */
+function personaText(p, i) {
+  const lines = [`${i + 1}. ${p.archetype}${p.nickname ? " — " + p.nickname : ""} (fit ${p.fit}/100)`];
+  if (p.snapshot) lines.push(p.snapshot);
+  if (p.household) lines.push("Household: " + p.household);
+  if (p.budget) lines.push("Budget: " + p.budget);
+  lines.push("Hooks:", ...p.hooks.map(h => "  - " + (h.feature ? h.feature + ": " : "") + h.why));
+  lines.push("Wants:", ...p.motivations.map(m => "  - " + m));
+  lines.push("Objections:", ...p.objections.map(o => "  - " + o.concern + (o.response ? " → " + o.response : "")));
+  lines.push("Channels: " + p.channels.join("; "));
+  lines.push("Showing tips:", ...p.showingTips.map(t => "  - " + t));
+  lines.push("Headline: " + p.headline);
+  if (p.adCopy) lines.push("Ad copy: " + p.adCopy);
+  return lines.join("\n");
+}
+function briefText(L, R) {
+  return [`BUYER PERSONAS — ${L.address || "Listing"}`, specLine(L), L.location, "", R.summary,
+    R.leadWith.length ? "Lead with: " + R.leadWith.join(", ") : "", "",
+    ...R.personas.map((p, i) => personaText(p, i) + "\n"),
+    R.others && R.others.length ? "Also possible: " + R.others.join(", ") : ""].filter(x => x !== undefined).join("\n");
+}
+function copy(text, msg) {
+  const done = () => toast(msg);
+  try {
+    navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+  } catch { fallbackCopy(text, done); }
+}
+function fallbackCopy(text, done) {
+  const t = document.createElement("textarea"); t.value = text; t.className = "sr"; document.body.append(t); t.select();
+  let ok = false; try { ok = document.execCommand("copy"); } catch {}
+  t.remove(); ok ? done() : toast("Copy blocked here. Select the text on the page and copy it manually.");
+}
+let toastTimer;
+function toast(m) { const t = $("toast"); t.textContent = m; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 2200); }
+
+/* ---------- Saved listings ---------- */
+function loadSaved() { try { return JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); } catch { return []; } }
+function writeSaved(list) { try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); return true; } catch { return false; } }
+function saveCurrent() {
+  if (!last) return;
+  const list = loadSaved().filter(x => x.listing.address !== last.listing.address || !last.listing.address);
+  list.unshift({ at: Date.now(), listing: last.listing, result: last.result });
+  writeSaved(list.slice(0, 30)) ? toast("Listing saved in this browser") : toast("This browser blocked saving. Use Copy full brief instead.");
+  renderSaved();
+}
+function renderSaved() {
+  const list = loadSaved(); $("savedCount").textContent = list.length;
+  $("savedList").innerHTML = list.length ? list.map((x, i) => `<li><div><div class="name">${esc(x.listing.address || "Untitled listing")}</div><div class="meta">${new Date(x.at).toLocaleDateString()} · ${esc(x.result.personas[0]?.archetype || "")} ${x.result.personas[0]?.fit ?? ""}</div></div>
+    <div class="gen-row"><button class="btn small" type="button" data-open="${i}">Open</button><button class="btn small" type="button" data-del="${i}">Remove</button></div></li>`).join("")
+    : `<li class="engine-note">Nothing saved yet. Build personas for a listing, then press Save listing.</li>`;
+  $("savedList").querySelectorAll("[data-open]").forEach(b => b.onclick = () => { const x = loadSaved()[+b.dataset.open]; if (!x) return; fillForm(x.listing); render(x.listing, x.result); toggleSaved(false); });
+  $("savedList").querySelectorAll("[data-del]").forEach(b => b.onclick = () => { const l = loadSaved(); l.splice(+b.dataset.del, 1); writeSaved(l); renderSaved(); });
+}
+function toggleSaved(force) {
+  const p = $("savedPanel"); const show = force ?? p.hidden; p.hidden = !show; $("btnSaved").setAttribute("aria-expanded", String(show));
+}
+
+/* ---------- Generate ---------- */
+async function generate(e) {
+  e.preventDefault();
+  const L = readForm();
+  if (!L.features.length && !L.notes && !L.beds) { renderStatus(""); $("out").innerHTML = `<div class="status err"><div class="msg">Add at least a few features, the bedroom count or some notes, then press Build personas.</div></div>`; return; }
+  if (!sample) { render(L, offline(L)); return; }
+  ctl = new AbortController();
+  $("btnGen").disabled = true; $("btnStop").hidden = false;
+  renderStatus("Claude is reading the listing and building personas. This usually takes 20–60 seconds");
+  try {
+    const r = await sample.json(prompt(L), { signal: ctl.signal });
+    const R = clean(r || {});
+    if (!R.personas.length) throw { code: "invalid_json" };
+    render(L, R);
+  } catch (err) {
+    const code = err && err.code;
+    if (code === "cancelled") { render(L, offline(L), { notice: "Stopped. Showing the built-in matcher instead." }); }
+    else {
+      if (["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"].includes(code)) { sample = null; setEngineNote(); }
+      render(L, offline(L), { notice: ERR[code] || "Claude couldn't finish this one. Showing the built-in matcher; press Build personas to try again." });
+    }
+  } finally { $("btnGen").disabled = false; $("btnStop").hidden = true; ctl = null; }
+}
+function setEngineNote() {
+  $("engineNote").textContent = sample ? "Uses Claude for named personas and ad copy" : "Using the built-in matcher (Claude not available here)";
+}
+
+/* ---------- Boot ---------- */
+buildChips();
+fillForm(EXAMPLE);
+render(EXAMPLE, offline(EXAMPLE), { example: true });
+renderSaved();
+$("form").addEventListener("submit", generate);
+$("btnStop").onclick = () => ctl?.abort();
+$("btnSaved").onclick = () => toggleSaved();
+$("btnNew").onclick = () => { fillForm({ ptype: "single", condition: "ready", tier: "mid", features: [] }); $("address").focus(); $("out").innerHTML = `<div class="status"><div class="msg">Fill in the listing on the left, tick its features, then press Build personas.</div></div>`; };
+if (window.claude?.use) {
+  window.claude.use("sample").then(s => { sample = s; setEngineNote(); }, () => setEngineNote());
+} else setEngineNote();
+})();
+</script>
